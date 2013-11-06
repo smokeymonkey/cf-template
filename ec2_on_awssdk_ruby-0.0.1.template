@@ -1,0 +1,81 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type" : "String"
+    }
+  },
+
+  "Mappings" : {
+    "RegionMap" : {
+      "us-east-1"      : { "AMI" : "ami-35792c5c" },
+      "us-west-1"      : { "AMI" : "ami-687b4f2d" },
+      "us-west-2"      : { "AMI" : "ami-d03ea1e0" },
+      "eu-west-1"      : { "AMI" : "ami-149f7863" },
+      "sa-east-1"      : { "AMI" : "ami-9f6ec982" },
+      "ap-southeast-1" : { "AMI" : "ami-14f2b946" },
+      "ap-southeast-2" : { "AMI" : "ami-a148d59b" },
+      "ap-northeast-1" : { "AMI" : "ami-3561fe34" }
+    }
+  },
+
+  "Resources" : {
+    "EC2Servers" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress": [{
+          "IpProtocol" : "tcp",
+          "CidrIp" : "0.0.0.0/0",
+          "FromPort" : "22",
+          "ToPort" : "22"
+        }]
+      }
+    },
+    "Ec2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]},
+        "InstanceType" : "t1.micro",
+        "SecurityGroupIds" : [
+          { "Ref" : "EC2Servers" }
+        ],
+        "Tags": [
+          { "Key" : "Name", "Value" : "host1" }
+        ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#! /bin/bash -v\n",
+          "yum update -y\n",
+          "yum install -y ruby19 ruby19-devel rubygems gcc make libxml2-devel libxslt-devel\n",
+          "sudo alternatives --set ruby /usr/bin/ruby1.9\n",
+          "gem install nokogiri\n",
+          "gem install aws-sdk\n",
+          "sed -i 's/en_US/ja_JP/' /etc/sysconfig/i18n\n",
+          "cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime\n"
+        ]]}}
+      }
+    }
+  },
+
+  "Outputs" : {
+    "InstanceId" : {
+      "Description" : "InstanceId of the newly created EC2 instance",
+      "Value" : { "Ref" : "Ec2Instance" }
+    },
+    "AZ" : {
+      "Description" : "Availability Zone of the newly created EC2 instance",
+      "Value" : { "Fn::GetAtt" : [ "Ec2Instance", "AvailabilityZone" ] }
+    },
+    "PublicIP" : {
+      "Description" : "Public IP address of the newly created EC2 instance",
+      "Value" : { "Fn::GetAtt" : [ "Ec2Instance", "PublicIp" ] }
+    },
+    "PrivateIP" : {
+      "Description" : "Private IP address of the newly created EC2 instance",
+      "Value" : { "Fn::GetAtt" : [ "Ec2Instance", "PrivateIp" ] }
+    }
+  }
+}
