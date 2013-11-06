@@ -50,7 +50,7 @@
           "#! /bin/bash -v\n",
           "yum update -y\n",
           "yum install -y ruby19 ruby19-devel rubygems gcc make libxml2-devel libxslt-devel\n",
-          "sudo alternatives --set ruby /usr/bin/ruby1.9\n",
+          "alternatives --set ruby /usr/bin/ruby1.9\n",
           "gem install nokogiri\n",
           "gem install aws-sdk\n",
           "sed -i 's/en_US/ja_JP/' /etc/sysconfig/i18n\n",
